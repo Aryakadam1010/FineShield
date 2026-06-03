@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinShield — AI Fraud Detection</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0a0f1e;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      background: rgba(10,15,30,0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 700; color: #60a5fa; letter-spacing: -0.5px; }
+    .logo span { color: #f472b6; }
+    .nav-tag {
+      font-size: 12px;
+      background: rgba(96,165,250,0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(96,165,250,0.3);
+      padding: 4px 10px;
+      border-radius: 99px;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 60px 20px 40px;
+    }
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 700;
+      background: linear-gradient(135deg, #60a5fa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    .hero p {
+      color: #94a3b8;
+      font-size: 16px;
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 24px 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 700px) { .container { grid-template-columns: 1fr; } }
+
+    /* ── CARDS ── */
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h2 .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #60a5fa;
+    }
+
+    /* ── FORM ── */
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 6px;
+    }
+    .field .hint {
+      font-size: 11px;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #e2e8f0;
+      font-size: 14px;
+      transition: border-color .2s;
+      outline: none;
+    }
+    .field input:focus { border-color: #60a5fa; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── PRESET BUTTONS ── */
+    .presets {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .preset-btn {
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .preset-btn:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+    .preset-btn.fraud { border-color: rgba(248,113,113,0.4); color: #f87171; }
+    .preset-btn.legit { border-color: rgba(52,211,153,0.4); color: #34d399; }
+
+    /* ── SUBMIT BTN ── */
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s;
+      margin-top: 8px;
+    }
+    .submit-btn:hover { opacity: 0.88; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── RESULT ── */
+    .result-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .result-placeholder {
+      text-align: center;
+      color: #334155;
+      padding: 40px 0;
+    }
+    .result-placeholder .big-icon { font-size: 48px; margin-bottom: 12px; }
+    .result-placeholder p { font-size: 14px; }
+
+    .verdict {
+      text-align: center;
+      padding: 28px 0 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 20px;
+    }
+    .verdict-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .verdict-text {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+    .verdict-text.fraud { color: #f87171; }
+    .verdict-text.legit { color: #34d399; }
+
+    .prob-bar-wrap { margin-bottom: 20px; }
+    .prob-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .prob-bar-bg {
+      height: 8px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .prob-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .8s ease;
+    }
+
+    .risk-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 99px;
+      margin-bottom: 16px;
+    }
+    .risk-HIGH { background: rgba(248,113,113,0.2); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+    .risk-MEDIUM { background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+    .risk-LOW { background: rgba(52,211,153,0.2); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+
+    .risk-factors h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+    .risk-factor-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 7px;
+    }
+    .risk-factor-item .bullet {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-val { font-size: 22px; font-weight: 700; color: #60a5fa; }
+    .stat-key { font-size: 11px; color: #475569; margin-top: 2px; }
+
+    /* ── LOADING ── */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Fin<span>Shield</span></div>
+  <div class="nav-tag">AI Fraud Detection · v1.0</div>
+</nav>
+
+<div class="hero">
+  <h1>Real-time Fraud Detection</h1>
+  <p>Enter transaction details below. The AI model analyzes patterns and flags suspicious activity instantly.</p>
+</div>
+
+<!-- Stats bar -->
+<div style="max-width:1100px;margin:0 auto;padding:0 24px 4px;">
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-val" id="stat-total">0</div>
+      <div class="stat-key">Transactions analyzed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="stat-fraud">0</div>
+      <div class="stat-key">Fraud detected</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="stat-rate">—</div>
+      <div class="stat-key">Fraud rate</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- INPUT FORM -->
+  <div class="card">
+    <h2><span class="dot"></span> Transaction Details</h2>
+
+    <div class="presets">
+      <span style="font-size:12px;color:#475569;align-self:center;">Load sample:</span>
+      <button class="preset-btn legit" onclick="loadPreset('legit')">✓ Legit transaction</button>
+      <button class="preset-btn fraud" onclick="loadPreset('fraud')">⚠ Fraud pattern</button>
+    </div>
+
+    <div class="field">
+      <label>Transaction Amount (₹)</label>
+      <div class="hint">The value of the transaction in rupees</div>
+      <input type="number" id="amount" placeholder="e.g. 1200" value="">
+    </div>
+
+    <div class="field">
+      <label>Hour of Day (0–23)</label>
+      <div class="hint">When did the transaction occur? Late night (0–5) is often suspicious.</div>
+      <input type="number" id="hour" placeholder="e.g. 14" min="0" max="23" value="">
+    </div>
+
+    <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">
+      Behavioral Features (V1–V5)
+    </div>
+    <div style="font-size:11px;color:#475569;margin-bottom:12px;line-height:1.5;">
+      These represent anonymized PCA-transformed features from the transaction (spending patterns,
+      merchant category, geolocation anomaly, etc.). Normal range: –3 to +3.
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>V1 — Spending pattern</label>
+        <input type="number" id="v1" placeholder="e.g. 0.5" step="0.1">
+      </div>
+      <div class="field">
+        <label>V2 — Time pattern</label>
+        <input type="number" id="v2" placeholder="e.g. -0.2" step="0.1">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>V3 — Merchant pattern</label>
+        <input type="number" id="v3" placeholder="e.g. 1.1" step="0.1">
+      </div>
+      <div class="field">
+        <label>V4 — Location pattern</label>
+        <input type="number" id="v4" placeholder="e.g. 0.3" step="0.1">
+      </div>
+    </div>
+    <div class="field">
+      <label>V5 — Device pattern</label>
+      <input type="number" id="v5" placeholder="e.g. -0.8" step="0.1">
+    </div>
+
+    <button class="submit-btn" onclick="analyze()" id="submit-btn">
+      Analyze Transaction
+    </button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="card result-card" id="result-card">
+    <div class="result-placeholder" id="placeholder">
+      <div class="big-icon">🔍</div>
+      <p>Fill in the transaction details<br>and click Analyze to see the result.</p>
+    </div>
+    <div id="result-content" style="display:none">
+      <div class="verdict">
+        <div class="verdict-label">Model verdict</div>
+        <div class="verdict-text" id="verdict-text"></div>
+        <div style="color:#64748b;font-size:13px;margin-top:4px" id="verdict-sub"></div>
+      </div>
+      <div class="prob-bar-wrap">
+        <div class="prob-label">
+          <span>Fraud probability</span>
+          <span id="prob-pct"></span>
+        </div>
+        <div class="prob-bar-bg">
+          <div class="prob-bar-fill" id="prob-bar" style="width:0%"></div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        Risk level: <span class="risk-badge" id="risk-badge"></span>
+      </div>
+      <div class="risk-factors">
+        <h3>Risk factors detected</h3>
+        <div id="risk-factors-list"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Session counters
+  let totalCount = 0, fraudCount = 0;
+
+  function updateStats(isFraud) {
+    totalCount++;
+    if (isFraud) fraudCount++;
+    document.getElementById('stat-total').textContent = totalCount;
+    document.getElementById('stat-fraud').textContent = fraudCount;
+    const rate = ((fraudCount / totalCount) * 100).toFixed(1);
+    document.getElementById('stat-rate').textContent = rate + '%';
+  }
+
+  function loadPreset(type) {
+    if (type === 'legit') {
+      document.getElementById('amount').value = '340';
+      document.getElementById('hour').value = '14';
+      document.getElementById('v1').value = '0.3';
+      document.getElementById('v2').value = '-0.1';
+      document.getElementById('v3').value = '0.8';
+      document.getElementById('v4').value = '0.2';
+      document.getElementById('v5').value = '-0.4';
+    } else {
+      document.getElementById('amount').value = '4200';
+      document.getElementById('hour').value = '2';
+      document.getElementById('v1').value = '-3.5';
+      document.getElementById('v2').value = '2.8';
+      document.getElementById('v3').value = '-4.2';
+      document.getElementById('v4').value = '1.9';
+      document.getElementById('v5').value = '-2.6';
+    }
+  }
+
+  async function analyze() {
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Analyzing...';
+
+    const payload = {
+      amount: parseFloat(document.getElementById('amount').value) || 0,
+      hour:   parseInt(document.getElementById('hour').value) || 0,
+      v1: parseFloat(document.getElementById('v1').value) || 0,
+      v2: parseFloat(document.getElementById('v2').value) || 0,
+      v3: parseFloat(document.getElementById('v3').value) || 0,
+      v4: parseFloat(document.getElementById('v4').value) || 0,
+      v5: parseFloat(document.getElementById('v5').value) || 0,
+    };
+
+    try {
+      const res = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showResult(data);
+      updateStats(data.prediction === 'FRAUD');
+    } catch (err) {
+      alert('Error connecting to server: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Analyze Transaction';
+    }
+  }
+
+  function showResult(data) {
+    document.getElementById('placeholder').style.display = 'none';
+    const content = document.getElementById('result-content');
+    content.style.display = 'block';
+
+    const isFraud = data.prediction === 'FRAUD';
+
+    // Verdict
+    const vt = document.getElementById('verdict-text');
+    vt.textContent = data.prediction;
+    vt.className = 'verdict-text ' + (isFraud ? 'fraud' : 'legit');
+    document.getElementById('verdict-sub').textContent =
+      isFraud ? 'This transaction shows signs of fraudulent activity.'
+               : 'This transaction appears to be legitimate.';
+
+    // Probability bar
+    const prob = data.fraud_probability * 100;
+    document.getElementById('prob-pct').textContent = data.fraud_probability_pct;
+    const bar = document.getElementById('prob-bar');
+    bar.style.width = '0%';
+    bar.style.background = isFraud
+      ? 'linear-gradient(90deg,#f87171,#ef4444)'
+      : 'linear-gradient(90deg,#34d399,#10b981)';
+    setTimeout(() => { bar.style.width = prob + '%'; }, 50);
+
+    // Risk badge
+    const badge = document.getElementById('risk-badge');
+    badge.textContent = data.risk_level + ' RISK';
+    badge.className = 'risk-badge risk-' + data.risk_level;
+
+    // Risk factors
+    const list = document.getElementById('risk-factors-list');
+    list.innerHTML = '';
+    data.risk_factors.forEach(factor => {
+      const color = isFraud ? '#f87171' : '#34d399';
+      list.innerHTML += `
+        <div class="risk-factor-item">
+          <div class="bullet" style="background:${color}"></div>
+          <span>${factor}</span>
+        </div>`;
+    });
+  }
+</script>
+</body>
+</html>
