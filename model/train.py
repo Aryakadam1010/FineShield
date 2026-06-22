@@ -8,9 +8,7 @@ from sklearn.metrics import f1_score, classification_report
 from imblearn.over_sampling import SMOTE
 import pickle
 
-# ─────────────────────────────────────────────
 # STEP 1: Create fake transaction data
-# ─────────────────────────────────────────────
 
 # Legitimate transactions — normal behaviour
 legit_data = {
@@ -24,7 +22,7 @@ legit_data = {
     'is_fraud': np.zeros(5000)                               # label = 0 = not fraud
 }
 
-# Fraudulent transactions — suspicious behaviour
+# Fraudulent transactions
 fraud_data = {
     'amount': np.random.exponential(scale=200, size=100),   # high amounts
     'hour':   np.random.randint(0, 6,          size=100),   # late night
@@ -49,18 +47,15 @@ print("Fraud transactions:", int(df['is_fraud'].sum()))
 print("Legit transactions:", int((df['is_fraud'] == 0).sum()))
 print()
 
-# ─────────────────────────────────────────────
 # STEP 2: Separate inputs and output
-# ─────────────────────────────────────────────
 
 # X = what we give the model to look at (the inputs)
 # y = what we want the model to predict (fraud or not)
 X = df[['amount', 'hour', 'v1', 'v2', 'v3', 'v4', 'v5']]
 y = df['is_fraud']
 
-# ─────────────────────────────────────────────
 # STEP 3: Scale the numbers
-# ─────────────────────────────────────────────
+
 # amount can be 5000. hour is 0-23. Very different scales.
 # StandardScaler brings everything to the same scale (mean=0, std=1)
 # so the model treats them fairly.
@@ -69,9 +64,8 @@ scaler = StandardScaler()
 X_scaled = X.copy()
 X_scaled[['amount', 'hour']] = scaler.fit_transform(X[['amount', 'hour']])
 
-# ─────────────────────────────────────────────
 # STEP 4: Split into train and test
-# ─────────────────────────────────────────────
+
 # Train set = data the model learns from (80%)
 # Test set  = data we use to check how good it is (20%)
 # We never test on data the model already saw — that would be cheating
@@ -86,9 +80,8 @@ print("Training samples:", len(X_train))
 print("Testing samples: ", len(X_test))
 print()
 
-# ─────────────────────────────────────────────
 # STEP 5: Fix the imbalance using SMOTE
-# ─────────────────────────────────────────────
+
 # Problem: we have 5000 legit but only 100 fraud
 # The model will just always say "not fraud" and be 98% accurate — useless
 # SMOTE creates new fake fraud samples so both classes are equal
@@ -101,9 +94,7 @@ print("  Fraud samples:", int(y_train.sum()))
 print("  Legit samples:", int((y_train == 0).sum()))
 print()
 
-# ─────────────────────────────────────────────
 # STEP 6: Train two models and compare
-# ─────────────────────────────────────────────
 
 # Model 1: Logistic Regression — simple, draws a straight line
 lr_model = LogisticRegression()
@@ -123,9 +114,8 @@ rf_f1   = f1_score(y_test, rf_pred)
 print("Random Forest F1 Score:", round(rf_f1, 4))
 print(classification_report(y_test, rf_pred, target_names=['Legit', 'Fraud']))
 
-# ─────────────────────────────────────────────
 # STEP 7: Save the better model
-# ─────────────────────────────────────────────
+
 # pickle saves a Python object to a file
 # so Flask can load it later without retraining
 
